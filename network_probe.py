@@ -182,9 +182,11 @@ def measure_jitter(destination, count):
 	rtt_packages = []
 
 	for _ in range(count):
-		response_time = ping(destination) * 1000
-		if response_time is not None:
-			rtt_packages.append(response_time)
+		ping_response = ping(destination, timeout=0.1)
+		if ping_response:
+			response_time = ping_response * 1000
+			if response_time is not None:
+				rtt_packages.append(response_time)
 
 		time.sleep(0.1)  # Adjust the interval between pings as needed
 
