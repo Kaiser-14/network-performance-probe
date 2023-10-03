@@ -109,9 +109,8 @@ def measure_bandwidth():
 
 	_net_dict = {}
 
-	# Exclude not important interfaces
-	# FIXME: Check with Kubernetes system
-	excluded_interfaces = ['Loopback Pseudo-Interface 1', 'vEthernet (WSL)']
+	# Exclude not important interfaces from several deployment options
+	excluded_interfaces = ['Loopback Pseudo-Interface 1', 'vEthernet (WSL)', 'lo']
 
 	# Get the maximum available bandwidth
 	for _interface, _data in _network_interface_stats.items():
@@ -298,7 +297,7 @@ def perform_measurements(
 		_measurements['bandwidth']['metric'] = 'Mbps'
 		bw_elapsed_time = time.time() - start_bw_time
 
-		interface = 'Wi-Fi'
+		interface = 'eth0'
 		measure = 'Mbps'
 		bandwidth = _network_interface_stats[interface]
 
@@ -343,7 +342,6 @@ def perform_measurements(
 		if verbose:
 			if latency is not None:
 				print(f'Measured Latency: {latency:.2f} ms')
-				# print(f'Measured Jitter: {jitter:.2f} ms')
 			else:
 				print('Latency measurement failed. Host may be unreachable.')
 			print(f'Time taken for Latency measurement: {latency_elapsed_time:.4f} seconds')
@@ -351,8 +349,6 @@ def perform_measurements(
 
 	if measure_jitter_flag:
 		start_jitter_time = time.time()
-		# jitter, _ = measure_latency(host, count=1)
-		# results = measure_latency_and_jitter(host, port)
 		jitter = measure_jitter(host, count=10)
 		_measurements['jitter']['value'] = jitter
 		_measurements['jitter']['metric'] = 'ms'
@@ -383,13 +379,13 @@ def perform_measurements(
 		_measurements['congestion']['metric'] = '%'
 		congestion_elapsed_time = time.time() - start_congestion_time
 		if verbose:
-			interface = 'Wi-Fi'  # FIXME: Check other possible interfaces
+			interface = 'eth0'
 			print(f"Network Utilization (%) on {interface}: {congestion[interface]:.2f}%")
 			print(f'Time taken for Network utilization measurement: {congestion_elapsed_time:.4f} seconds')
 			print('---------------------------')
 
 	if measure_interface_stats_flag:
-		interface_name = 'Wi-Fi'  # 'eth0'  # Replace with the desired network interface name
+		interface_name = 'eth0'
 		interface_stats = get_network_interface_statistics(interface_name)
 		_measurements['interface_stats']['value'] = interface_stats
 		if verbose:
@@ -447,10 +443,10 @@ if __name__ == '__main__':
 	parser.add_argument('--duration', dest='duration', type=int, default=4, help='Test duration (default: 4)')
 	parser.add_argument('--bandwidth', action='store_true', help='Enable bandwidth measurement')
 	parser.add_argument('--throughput', action='store_true', help='Enable throughput measurement')
-	parser.add_argument('--congestion', action='store_true', help='Enable network congestion measurement')
 	parser.add_argument('--packet-loss', action='store_true', help='Enable packet loss rate measurement')
 	parser.add_argument('--latency', action='store_true', help='Enable latency measurement')
 	parser.add_argument('--jitter', action='store_true', help='Enable jitter measurement')
+	parser.add_argument('--congestion', action='store_true', help='Enable network congestion measurement')
 	parser.add_argument('--retransmission-rate', action='store_true', help='Enable retransmission rate measurement')
 	parser.add_argument('--interface-stats', action='store_true', help='Enable network interface statistics measurement')
 	args = parser.parse_args()
