@@ -11,6 +11,8 @@ import numpy as np
 import psutil
 from ping3 import ping
 
+import data_communication
+
 
 def send_icmp_echo_request(sock, dst_ip, icmp_id, icmp_seq):
 	# ICMP Echo Request Type and Code
@@ -451,6 +453,9 @@ if __name__ == '__main__':
 	parser.add_argument('--congestion', action='store_true', help='Enable network congestion measurement')
 	parser.add_argument('--retransmission-rate', action='store_true', help='Enable retransmission rate measurement')
 	parser.add_argument('--interface-stats', action='store_true', help='Enable network interface statistics measurement')
+	parser.add_argument('--kafka', nargs=2, help='Kafka server address (e.g., localhost:9092) and topic')
+	parser.add_argument('--rabbitmq', nargs=2, help='RabbitMQ server address and queue')
+	parser.add_argument('--api', dest='api', type=str, help="API URL")
 	args = parser.parse_args()
 
 	try:
@@ -492,9 +497,28 @@ if __name__ == '__main__':
 		data['timestamp'] = datetime.fromtimestamp(datetime.now().timestamp()).strftime("%d-%m-%Y, %H:%M:%S")
 		data['total_time_taken'] = round(elapsed_time, 2)
 
-
 		if args.verbose:
 			print(json.dumps(data, indent=4))
+
+		if args.kafka:
+			producer = data_communication.kafka_connection(args.kafka[0])
+			data_communication.kafka_send(producer, json.dumps(data), args.kafka[1])
+
+			if args.verbose:
+				print(f'Data transmitted to Kafka server.')
+
+		if args.rabbitmq:
+			data_communication.rabbit_connection(args.rabbitmq[0])
+			data_communication.rabbit_send(json.dumps(data), args.rabbit[1])
+
+			if args.verbose:
+				print(f'Data transmitted to RabbitMQ broker.')
+
+		if args.api:
+			data_communication.api_send(json.dumps(data), args.api)
+
+			if args.verbose:
+				print(f'Data transmitted to Rest API')
 
 	except PermissionError as e:
 		print('Error: Permission denied. Run the script with administrative privileges.')
