@@ -96,12 +96,12 @@ Replace <target_host> with the IP address or hostname of the target you want to 
 - '--duration <duration>': Test duration in seconds (default: 4).
 - '--bandwidth': Enable bandwidth measurement.
 - '--throughput': Enable throughput measurement.
-- '--congestion': Enable network congestion measurement.
 - '--packet-loss': Enable packet loss rate measurement.
 - '--latency': Enable latency measurement.
 - '--jitter': Enable jitter measurement.
-- '--retransmission-rate': Enable retransmission rate measurement.
-- '--interface-stats': Enable network interface statistics measurement.
+- '--congestion': Enable network congestion measurement.
+- '--retransmission-rate': Enable retransmission rate measurement. [NOT WORKING]
+- '--interface-stats': Enable network interface statistics measurement. [NOT WORKING]
 
 Example usage:
 
@@ -109,6 +109,13 @@ Example usage:
    python network_probe.py --host 192.168.1.291 --port 80 --bandwidth --latency --congestion --verbose
    ```
 
+On Docker
+
+   ```bash
+   docker build -t network-probe:latest .
+   docker run network-probe:latest --verbose --host 192.168.1.291 --bandwidth --throughput --packet-loss --latency --jitter --congestion
+   ```
+
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+[//]: # (This project is licensed under the MIT License - see the LICENSE file for details.)
