@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-performance-probe
+  labels:
+    app: network-performance-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: network-performance-probe
+  template:
+    metadata:
+      name: network-performance-probe
+      labels:
+        app: network-performance-probe
+    spec:
+      containers:
+        - name: network-performance-probe
+          image: network-probe:latest
+          imagePullPolicy: IfNotPresent
+          args: ['--host', '192.168.1.45', '--live', '--port', '80', '--bandwidth', '--latency', '--packet-loss', '--throughput', '--congestion']
+      restartPolicy: Always
+      
