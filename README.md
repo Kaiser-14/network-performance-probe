@@ -93,6 +93,8 @@ Replace <target_host> with the IP address or hostname of the target you want to 
 - '--verbose': Print verbose output.
 - '--host <target_host>': Specify the target host IP address (required).
 - '--port <target_port>': Specify the target port (default: 80).
+- '--live': Enable live execution.
+- '--delay <delay>': Delay in seconds for live execution (default: 30s).
 - '--duration <duration>': Test duration in seconds (default: 4).
 - '--bandwidth': Enable bandwidth measurement.
 - '--throughput': Enable throughput measurement.
@@ -106,14 +108,14 @@ Replace <target_host> with the IP address or hostname of the target you want to 
 Example usage:
 
    ```bash
-   python network_probe.py --host 192.168.1.291 --port 80 --bandwidth --latency --congestion --verbose
+   python network_probe.py --host 192.168.1.291 --port 80 --live --delay 15 --bandwidth --latency --congestion --verbose
    ```
 
 On Docker
 
    ```bash
-   docker build -t network-probe:latest .
-   docker run network-probe:latest --verbose --host 192.168.1.291 --bandwidth --throughput --packet-loss --latency --jitter --congestion
+   docker build -t network-probe .
+   docker run --name network-probe -d network-probe --verbose --host 192.168.1.291 --live --delay 15 --bandwidth --throughput --packet-loss --latency --jitter --congestion
    ```
 
 ## License

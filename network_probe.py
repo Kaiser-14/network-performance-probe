@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import random
 import signal
 import socket
@@ -13,6 +14,8 @@ from ping3 import ping
 
 import data_communication
 
+# Configure the logging system
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def send_icmp_echo_request(sock, dst_ip, icmp_id, icmp_seq):
 	# ICMP Echo Request Type and Code
@@ -60,7 +63,7 @@ def receive_icmp_echo_reply(sock, icmp_id, icmp_seq, timeout):
 
 			# Check if the received packet is an ICMP Echo Reply with the correct ID and Sequence
 			if icmp_type == 0 and icmp_code == 0 and received_id == icmp_id and received_seq == icmp_seq:
-				print(received_seq)
+				# logging.info(received_seq)
 				rtt = time.time() - start_time
 				return True, rtt
 
@@ -287,11 +290,11 @@ def perform_measurements(
 		},
 	}
 
-	print('---------------------------')
-	print('Performing network measurements...')
-	print(f'Target host: {host}')
-	print(f'Target port: {port}')
-	print('---------------------------')
+	logging.info('---------------------------')
+	logging.info('Performing network measurements...')
+	logging.info(f'Target host: {host}')
+	logging.info(f'Target port: {port}')
+	logging.info('---------------------------')
 
 	if measure_bandwidth_flag:
 		# Get the available bandwidth for all the network interfaces
@@ -306,9 +309,9 @@ def perform_measurements(
 		bandwidth = _network_interface_stats[interface]
 
 		if verbose:
-			print(f'Measured Bandwidth on interface {interface}: {bandwidth:.2f} {measure}')
-			print(f'Time taken for Bandwidth measurement: {bw_elapsed_time:.4f} seconds')
-			print('---------------------------')
+			logging.info(f'Measured Bandwidth on interface {interface}: {bandwidth:.2f} {measure}')
+			logging.info(f'Time taken for Bandwidth measurement: {bw_elapsed_time:.4f} seconds')
+			logging.info('---------------------------')
 
 	if measure_throughput_flag:
 		start_br_time = time.time()
@@ -317,9 +320,9 @@ def perform_measurements(
 		_measurements['throughput']['metric'] = measure
 		br_elapsed_time = time.time() - start_br_time
 		if verbose:
-			print(f'Measured Throughput: {throughput:.2f} {measure}')
-			print(f'Time taken for Throughput measurement: {br_elapsed_time:.4f} seconds')
-			print('---------------------------')
+			logging.info(f'Measured Throughput: {throughput:.2f} {measure}')
+			logging.info(f'Time taken for Throughput measurement: {br_elapsed_time:.4f} seconds')
+			logging.info('---------------------------')
 
 	if measure_packet_loss_flag:
 		start_loss_time = time.time()
@@ -329,11 +332,11 @@ def perform_measurements(
 		loss_elapsed_time = time.time() - start_loss_time
 		if verbose:
 			if packet_loss is not None:
-				print(f'Measured Packet Loss Rate: {packet_loss:.2f}%')
+				logging.info(f'Measured Packet Loss Rate: {packet_loss:.2f}%')
 			else:
-				print('Packet loss measurement failed. Host may be unreachable.')
-			print(f'Time taken for Packet Loss measurement: {loss_elapsed_time:.4f} seconds')
-			print('---------------------------')
+				logging.info('Packet loss measurement failed. Host may be unreachable.')
+			logging.info(f'Time taken for Packet Loss measurement: {loss_elapsed_time:.4f} seconds')
+			logging.info('---------------------------')
 
 	if measure_latency_flag:
 		start_latency_time = time.time()
@@ -345,11 +348,11 @@ def perform_measurements(
 		latency_elapsed_time = time.time() - start_latency_time
 		if verbose:
 			if latency is not None:
-				print(f'Measured Latency: {latency:.2f} ms')
+				logging.info(f'Measured Latency: {latency:.2f} ms')
 			else:
-				print('Latency measurement failed. Host may be unreachable.')
-			print(f'Time taken for Latency measurement: {latency_elapsed_time:.4f} seconds')
-			print('---------------------------')
+				logging.info('Latency measurement failed. Host may be unreachable.')
+			logging.info(f'Time taken for Latency measurement: {latency_elapsed_time:.4f} seconds')
+			logging.info('---------------------------')
 
 	if measure_jitter_flag:
 		start_jitter_time = time.time()
@@ -359,11 +362,11 @@ def perform_measurements(
 		jitter_elapsed_time = time.time() - start_jitter_time
 		if verbose:
 			if jitter is not None:
-				print(f'Measured Jitter: {jitter:.2f} ms')
+				logging.info(f'Measured Jitter: {jitter:.2f} ms')
 			else:
-				print('Jitter measurement failed. Host may be unreachable.')
-			print(f'Time taken for jitter measurement: {jitter_elapsed_time:.4f} seconds')
-			print('---------------------------')
+				logging.info('Jitter measurement failed. Host may be unreachable.')
+			logging.info(f'Time taken for jitter measurement: {jitter_elapsed_time:.4f} seconds')
+			logging.info('---------------------------')
 
 	if measure_retransmission_rate_flag:
 		start_rtxrate_time = time.time()
@@ -372,9 +375,9 @@ def perform_measurements(
 		_measurements['retransmission_rate']['metric'] = '%'
 		rtxrate_elapsed_time = time.time() - start_rtxrate_time
 		if verbose:
-			print(f'Measured Retransmission Rate: {retransmission_rate:.2f}%')
-			print(f'Time taken for Retransmission rate measurement: {rtxrate_elapsed_time:.4f} seconds')
-			print('---------------------------')
+			logging.info(f'Measured Retransmission Rate: {retransmission_rate:.2f}%')
+			logging.info(f'Time taken for Retransmission rate measurement: {rtxrate_elapsed_time:.4f} seconds')
+			logging.info('---------------------------')
 
 	if measure_congestion_flag:
 		start_congestion_time = time.time()
@@ -384,9 +387,9 @@ def perform_measurements(
 		congestion_elapsed_time = time.time() - start_congestion_time
 		if verbose:
 			interface = 'eth0'
-			print(f"Network Utilization (%) on {interface}: {congestion[interface]:.2f}%")
-			print(f'Time taken for Network utilization measurement: {congestion_elapsed_time:.4f} seconds')
-			print('---------------------------')
+			logging.info(f"Network Utilization (%) on {interface}: {congestion[interface]:.2f}%")
+			logging.info(f'Time taken for Network utilization measurement: {congestion_elapsed_time:.4f} seconds')
+			logging.info('---------------------------')
 
 	if measure_interface_stats_flag:
 		interface_name = 'eth0'
@@ -394,31 +397,35 @@ def perform_measurements(
 		_measurements['interface_stats']['value'] = interface_stats
 		if verbose:
 			if interface_stats:
-				print(f'Network Interface: {interface_name}')
-				print(f'Bytes Sent: {interface_stats.bytes_sent}')
-				print(f'Bytes Received: {interface_stats.bytes_recv}')
-				print(f'Packets Sent: {interface_stats.packets_sent}')
-				print(f'Packets Received: {interface_stats.packets_recv}')
-				print(f'Errors: {interface_stats.errin + interface_stats.errout}')
-				print(f'Collisions: {interface_stats.collisions}')
+				logging.info(f'Network Interface: {interface_name}')
+				logging.info(f'Bytes Sent: {interface_stats.bytes_sent}')
+				logging.info(f'Bytes Received: {interface_stats.bytes_recv}')
+				logging.info(f'Packets Sent: {interface_stats.packets_sent}')
+				logging.info(f'Packets Received: {interface_stats.packets_recv}')
+				logging.info(f'Errors: {interface_stats.errin + interface_stats.errout}')
+				logging.info(f'Collisions: {interface_stats.collisions}')
 			else:
-				print(f"Network interface '{interface_name}' not found.")
-			print('---------------------------')
+				logging.info(f"Network interface '{interface_name}' not found.")
+			logging.info('---------------------------')
 
 	total_elapsed_time = time.time() - start_time
 	if verbose:
-		print(f'Total time taken for all measurements: {total_elapsed_time:.4f} seconds')
-		print('---------------------------')
+		logging.info(f'Total time taken for all measurements: {total_elapsed_time:.4f} seconds')
+		logging.info('---------------------------')
 
 	# Filter out entries with 'None' values in the 'value' key
 	_measurements = {key: value for key, value in _measurements.items() if value.get('value') is not None}
 
 	return _measurements, total_elapsed_time
 
+# Execute new loop based on external trigger
+def trigger_measure():
+	# TODO: Check how to handle on demand (Kafka, Rabbit, API)
+	pass
 
 # Handle user interruption
 def signal_handler():
-	print('\nTraffic monitoring interrupted. Exiting...')
+	logging.info('\nTraffic monitoring interrupted. Exiting...')
 	exit(0)
 
 
@@ -444,6 +451,8 @@ if __name__ == '__main__':
 	parser.add_argument("--verbose", action="store_true", help="Print verbose output")
 	parser.add_argument('--host', dest='remote_host', required=True, help='Specify the target host IP address')
 	parser.add_argument('--port', dest='target_port', type=int, default=80, help='Specify the target port (default: 80)')
+	parser.add_argument("--live", action="store_true", help="Enable live execution")
+	parser.add_argument("--delay", type=int, default=30, help="Delay in seconds for live execution (default: 30s)")
 	parser.add_argument('--duration', dest='duration', type=int, default=4, help='Test duration (default: 4)')
 	parser.add_argument('--bandwidth', action='store_true', help='Enable bandwidth measurement')
 	parser.add_argument('--throughput', action='store_true', help='Enable throughput measurement')
@@ -458,69 +467,73 @@ if __name__ == '__main__':
 	parser.add_argument('--api', dest='api', type=str, help="API URL")
 	args = parser.parse_args()
 
-	try:
-		measurements, elapsed_time = perform_measurements(
-			args.verbose,
-			args.remote_host,
-			args.target_port,
-			args.duration,
-			measure_bandwidth_flag=args.bandwidth,
-			measure_throughput_flag=args.throughput,
-			measure_congestion_flag=args.congestion,
-			measure_packet_loss_flag=args.packet_loss,
-			measure_latency_flag=args.latency,
-			measure_jitter_flag=args.jitter,
-			measure_retransmission_rate_flag=args.retransmission_rate,  # FIXME: Check it
-			measure_interface_stats_flag=args.interface_stats  # FIXME: Works better with congestion flag
-		)
+	# Infinite loop
+	while True:
+		try:
+			measurements, elapsed_time = perform_measurements(
+				args.verbose,
+				args.remote_host,
+				args.target_port,
+				args.duration,
+				measure_bandwidth_flag=args.bandwidth,
+				measure_throughput_flag=args.throughput,
+				measure_congestion_flag=args.congestion,
+				measure_packet_loss_flag=args.packet_loss,
+				measure_latency_flag=args.latency,
+				measure_jitter_flag=args.jitter,
+				measure_retransmission_rate_flag=args.retransmission_rate,  # FIXME: Check it
+				measure_interface_stats_flag=args.interface_stats  # FIXME: Works better with congestion flag
+			)
 
-		# In case to retrieve information from origin host
-		# hostname = socket.gethostname()
-		# IPAddr = socket.gethostbyname(hostname)
-		# print("Your Computer Name is:" + hostname)
-		# print("Your Computer IP Address is:" + IPAddr)
+			# In case to retrieve information from origin host
+			# hostname = socket.gethostname()
+			# IPAddr = socket.gethostbyname(hostname)
+			# logging.info("Your Computer Name is:" + hostname)
+			# logging.info("Your Computer IP Address is:" + IPAddr)
 
-		# Extract local IP
-		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		s.connect(('8.8.8.8', 1))  # connect() for UDP doesn't send packets
-		local_ip_address = s.getsockname()[0]
+			# Extract local IP
+			s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			s.connect(('8.8.8.8', 1))  # connect() for UDP doesn't send packets
+			local_ip_address = s.getsockname()[0]
 
-		data['connection']['local'] = local_ip_address
-		data['connection']['remote'] = args.remote_host
-		data['connection']['port'] = args.target_port
+			data['connection']['local'] = local_ip_address
+			data['connection']['remote'] = args.remote_host
+			data['connection']['port'] = args.target_port
 
-		# data['connection']['parameters']['protocol'] = args.protocol
-		# data['connection']['parameters']['duration'] = args.duration
+			data['measurements'] = measurements
 
-		data['measurements'] = measurements
+			data['timestamp'] = datetime.fromtimestamp(datetime.now().timestamp()).strftime("%d-%m-%Y, %H:%M:%S")
+			data['total_time_taken'] = round(elapsed_time, 2)
 
-		data['timestamp'] = datetime.fromtimestamp(datetime.now().timestamp()).strftime("%d-%m-%Y, %H:%M:%S")
-		data['total_time_taken'] = round(elapsed_time, 2)
+			# Debug data extracted
+			logging.debug(json.dumps(data, indent=4))
 
-		if args.verbose:
-			print(json.dumps(data, indent=4))
+			if args.kafka:
+				producer = data_communication.kafka_connection(args.kafka[0])
+				data_communication.kafka_send(producer, json.dumps(data), args.kafka[1])
 
-		if args.kafka:
-			producer = data_communication.kafka_connection(args.kafka[0])
-			data_communication.kafka_send(producer, json.dumps(data), args.kafka[1])
+				logging.debug(f'Data transmitted to Kafka server.')
 
-			if args.verbose:
-				print(f'Data transmitted to Kafka server.')
+			if args.rabbitmq:
+				data_communication.rabbit_connection(args.rabbitmq[0])
+				data_communication.rabbit_send(json.dumps(data), args.rabbit[1])
 
-		if args.rabbitmq:
-			data_communication.rabbit_connection(args.rabbitmq[0])
-			data_communication.rabbit_send(json.dumps(data), args.rabbit[1])
+				logging.debug(f'Data transmitted to RabbitMQ broker.')
 
-			if args.verbose:
-				print(f'Data transmitted to RabbitMQ broker.')
+			if args.api:
+				data_communication.api_send(json.dumps(data), args.api)
 
-		if args.api:
-			data_communication.api_send(json.dumps(data), args.api)
+				logging.debug(f'Data transmitted to Rest API')
 
-			if args.verbose:
-				print(f'Data transmitted to Rest API')
+			# Handle delays
+			if args.live:
+				logging.info(f'Waiting {args.delay} seconds for next measures...')
+				time.sleep(args.delay)
+			else:
+				logging.info(f'Waiting trigger for next measure...')
+				trigger_measure()
 
-	except PermissionError as e:
-		print('Error: Permission denied. Run the script with administrative privileges.')
-	except Exception as e:
-		print(f'Error: {e}')
+		except PermissionError as e:
+			logging.error('Error: Permission denied. Run the script with administrative privileges.')
+		except Exception as e:
+			logging.error(f'Error: {e}')
