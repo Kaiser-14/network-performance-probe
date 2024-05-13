@@ -1,7 +1,8 @@
-from kafka import KafkaProducer
 import pika
 import requests
-import json
+from kafka import KafkaProducer
+from prometheus_client import Gauge, start_http_server
+
 
 def kafka_connection(kafka_server):
 	producer = KafkaProducer(bootstrap_servers=kafka_server+':9092')
@@ -31,3 +32,18 @@ def api_send(json_data, api_url):
 	else:
 		print(f"Failed to send data. Status code: {response.status_code}")
 		print(response.text)
+
+def prometheus_connection(port):
+	metric_gauge = Gauge(
+		'metric',
+		'metric',
+		['name']
+	)
+	start_http_server(port)
+
+	return metric_gauge
+
+def prometheus_send(metrics, data):
+	metrics.labels('throughput').set(data['measurements']['throughput']['value'])
+	metrics.labels('latency').set(data['measurements']['latency']['value'])
+	metrics.labels('packet_loss').set(data['measurements']['packet_loss']['value'])

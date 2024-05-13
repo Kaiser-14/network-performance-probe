@@ -304,7 +304,7 @@ def perform_measurements(
 		_measurements['bandwidth']['metric'] = 'Mbps'
 		bw_elapsed_time = time.time() - start_bw_time
 
-		interface = 'eth0'
+		interface = args.interface
 		measure = 'Mbps'
 		bandwidth = _network_interface_stats[interface]
 
@@ -386,13 +386,13 @@ def perform_measurements(
 		_measurements['congestion']['metric'] = '%'
 		congestion_elapsed_time = time.time() - start_congestion_time
 		if verbose:
-			interface = 'eth0'
+			interface = args.interface
 			logging.info(f"Network Utilization (%) on {interface}: {congestion[interface]:.2f}%")
 			logging.info(f'Time taken for Network utilization measurement: {congestion_elapsed_time:.4f} seconds')
 			logging.info('---------------------------')
 
 	if measure_interface_stats_flag:
-		interface_name = 'eth0'
+		interface_name = args.interface
 		interface_stats = get_network_interface_statistics(interface_name)
 		_measurements['interface_stats']['value'] = interface_stats
 		if verbose:
@@ -448,7 +448,8 @@ if __name__ == '__main__':
 
 	# CLI commands
 	parser = argparse.ArgumentParser(description='Network Measurement Script')
-	parser.add_argument("--verbose", action="store_true", help="Print verbose output")
+	parser.add_argument("--verbose", action="store_true", help='Print verbose output')
+	parser.add_argument('--interface', dest='interface', required=False, default='eth0', help='Network interface (default: eth0)')
 	parser.add_argument('--host', dest='remote_host', required=True, help='Specify the target host IP address')
 	parser.add_argument('--port', dest='target_port', type=int, default=80, help='Specify the target port (default: 80)')
 	parser.add_argument("--live", action="store_true", help="Enable live execution")
@@ -464,8 +465,17 @@ if __name__ == '__main__':
 	parser.add_argument('--interface-stats', action='store_true', help='Enable network interface statistics measurement')
 	parser.add_argument('--kafka', nargs=2, help='Kafka server address (e.g., localhost:9092) and topic')
 	parser.add_argument('--rabbitmq', nargs=2, help='RabbitMQ server address and queue')
-	parser.add_argument('--api', dest='api', type=str, help="API URL")
+	parser.add_argument('--api', dest='api', type=str, help='API URL')
+	parser.add_argument('--prometheus', dest='prometheus', type=int, help='Prometheus server')
 	args = parser.parse_args()
+
+	# Enable connections
+	if args.kafka:
+		producer = data_communication.kafka_connection(args.kafka[0])
+		logging.info(f'Kafka producer created on {args.kafka[0]}.')
+	if args.prometheus:
+		metrics = data_communication.prometheus_connection(args.prometheus)
+		logging.info(f'Pushing metrics to Prometheus on port {args.prometheus}.')
 
 	# Infinite loop
 	while True:
@@ -508,22 +518,30 @@ if __name__ == '__main__':
 			# Debug data extracted
 			logging.debug(json.dumps(data, indent=4))
 
+			# Apache Kafka
 			if args.kafka:
-				producer = data_communication.kafka_connection(args.kafka[0])
+				# producer = data_communication.kafka_connection(args.kafka[0])
 				data_communication.kafka_send(producer, json.dumps(data), args.kafka[1])
 
 				logging.debug(f'Data transmitted to Kafka server.')
 
+			# Rabbit MQ
 			if args.rabbitmq:
 				data_communication.rabbit_connection(args.rabbitmq[0])
 				data_communication.rabbit_send(json.dumps(data), args.rabbit[1])
 
 				logging.debug(f'Data transmitted to RabbitMQ broker.')
 
+			# Rest API
 			if args.api:
 				data_communication.api_send(json.dumps(data), args.api)
 
 				logging.debug(f'Data transmitted to Rest API')
+
+			# Prometheus
+			if args.prometheus:
+			# 	metrics = data_communication.prometheus_connection(args.prometheus)
+				data_communication.prometheus_send(metrics, data)
 
 			# Handle delays
 			if args.live:
@@ -537,3 +555,4 @@ if __name__ == '__main__':
 			logging.error('Error: Permission denied. Run the script with administrative privileges.')
 		except Exception as e:
 			logging.error(f'Error: {e}')
+			time.sleep(60)

@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: network-performance-probe
-          image: network-probe:latest
+          image: kaiser1414/network-performance-probe:latest
           imagePullPolicy: IfNotPresent
-          args: ['--host', '192.168.1.45', '--live', '--port', '80', '--bandwidth', '--latency', '--packet-loss', '--throughput', '--congestion']
+          args: ['--host', '127.0.0.1', '--live', '--port', '80', '--bandwidth', '--throughput', '--latency', '--packet-loss']
       restartPolicy: Always
       
