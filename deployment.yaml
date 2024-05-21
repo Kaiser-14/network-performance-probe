@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: network-performance-probe
+  name: network-performance-probe-deployment
   labels:
     app: network-performance-probe
 spec:
@@ -19,6 +19,9 @@ spec:
         - name: network-performance-probe
           image: kaiser1414/network-performance-probe:latest
           imagePullPolicy: IfNotPresent
-          args: ['--host', '127.0.0.1', '--live', '--port', '80', '--bandwidth', '--throughput', '--latency', '--packet-loss']
+          ports:
+            - containerPort: 5000
+            - containerPort: 5001
+          args: ['verbose', 'live', '--host', '127.0.0.1', '--port', '80', '--throughput', '--latency', '--packet-loss', '--prometheus', '5001']
       restartPolicy: Always
       

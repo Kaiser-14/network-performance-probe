@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-performance-probe-service
+spec:
+  selector:
+    app: network-performance-probe
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+  type: LoadBalancer

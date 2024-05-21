@@ -47,3 +47,6 @@ def prometheus_send(metrics, data):
 	metrics.labels('throughput').set(data['measurements']['throughput']['value'])
 	metrics.labels('latency').set(data['measurements']['latency']['value'])
 	metrics.labels('packet_loss').set(data['measurements']['packet_loss']['value'])
+
+def flask_start(app, port):
+	app.run(host='0.0.0.0', port=port)

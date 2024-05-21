@@ -6,7 +6,14 @@ import signal
 import socket
 import struct
 import time
+import threading
 from datetime import datetime
+
+from flask import Flask
+
+app = Flask(__name__)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.CRITICAL)
 
 import numpy as np
 import psutil
@@ -418,10 +425,86 @@ def perform_measurements(
 
 	return _measurements, total_elapsed_time
 
+
+def run_procedure(_kafka_producer=None, _prometheus_metrics=None):
+	try:
+		measurements, elapsed_time = perform_measurements(
+			args.verbose,
+			args.remote_host,
+			args.target_port,
+			args.duration,
+			measure_bandwidth_flag=args.bandwidth,
+			measure_throughput_flag=args.throughput,
+			measure_congestion_flag=args.congestion,
+			measure_packet_loss_flag=args.packet_loss,
+			measure_latency_flag=args.latency,
+			measure_jitter_flag=args.jitter,
+			measure_retransmission_rate_flag=args.retransmission_rate,  # FIXME: Check it
+			measure_interface_stats_flag=args.interface_stats  # FIXME: Works better with congestion flag
+		)
+
+		# In case to retrieve information from origin host
+		# hostname = socket.gethostname()
+		# IPAddr = socket.gethostbyname(hostname)
+		# logging.info("Your Computer Name is:" + hostname)
+		# logging.info("Your Computer IP Address is:" + IPAddr)
+
+		# Extract local IP
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		s.connect(('8.8.8.8', 1))  # connect() for UDP doesn't send packets
+		local_ip_address = s.getsockname()[0]
+
+		data['connection']['local'] = local_ip_address
+		data['connection']['remote'] = args.remote_host
+		data['connection']['port'] = args.target_port
+
+		data['measurements'] = measurements
+
+		data['timestamp'] = datetime.fromtimestamp(datetime.now().timestamp()).strftime("%d-%m-%Y, %H:%M:%S")
+		data['total_time_taken'] = round(elapsed_time, 2)
+
+		# Debug data extracted
+		logging.debug(json.dumps(data, indent=4))
+
+		# Apache Kafka
+		if args.kafka:
+			# producer = data_communication.kafka_connection(args.kafka[0])
+			data_communication.kafka_send(_kafka_producer, json.dumps(data), args.kafka[1])
+
+			logging.debug(f'Data transmitted to Kafka server.')
+
+		# Rabbit MQ
+		if args.rabbitmq:
+			data_communication.rabbit_connection(args.rabbitmq[0])
+			data_communication.rabbit_send(json.dumps(data), args.rabbit[1])
+
+			logging.debug(f'Data transmitted to RabbitMQ broker.')
+
+		# Rest API
+		if args.api:
+			data_communication.api_send(json.dumps(data), args.api)
+
+			logging.debug(f'Data transmitted to Rest API')
+
+		# Prometheus
+		if args.prometheus:
+			data_communication.prometheus_send(_prometheus_metrics, data)
+
+		return data
+
+	except PermissionError as e:
+		logging.error('Error: Permission denied. Run the script with administrative privileges.')
+	except Exception as e:
+		logging.error(f'Error: {e}. Restart script for new measures.')
+		time.sleep(60)
+
 # Execute new loop based on external trigger
+@app.route('/measure')
 def trigger_measure():
-	# TODO: Check how to handle on demand (Kafka, Rabbit, API)
-	pass
+	measurement_data = run_procedure(kafka_producer, prometheus_metrics)
+	logging.info(f'Waiting trigger for next measure...')
+
+	return json.dumps(measurement_data, indent=4), 200
 
 # Handle user interruption
 def signal_handler():
@@ -442,6 +525,8 @@ if __name__ == '__main__':
 		'timestamp': None,
 		'total_time_taken': None
 	}
+	kafka_producer = None
+	prometheus_metrics = None
 
 	# Register the signal handler for KeyboardInterrupt (Ctrl+C)
 	signal.signal(signal.SIGINT, signal_handler)
@@ -467,92 +552,27 @@ if __name__ == '__main__':
 	parser.add_argument('--rabbitmq', nargs=2, help='RabbitMQ server address and queue')
 	parser.add_argument('--api', dest='api', type=str, help='API URL')
 	parser.add_argument('--prometheus', dest='prometheus', type=int, help='Prometheus server')
+	parser.add_argument('--flask', dest='flask', type=int, default=5000, help='Incoming HTTP request through the Flask server')
 	args = parser.parse_args()
 
 	# Enable connections
 	if args.kafka:
-		producer = data_communication.kafka_connection(args.kafka[0])
+		kafka_producer = data_communication.kafka_connection(args.kafka[0])
 		logging.info(f'Kafka producer created on {args.kafka[0]}.')
 	if args.prometheus:
-		metrics = data_communication.prometheus_connection(args.prometheus)
+		prometheus_thread = threading.Thread(target=data_communication.flask_start, args=(app, args.flask), daemon=True).start()
+		prometheus_metrics = data_communication.prometheus_connection(args.prometheus)
 		logging.info(f'Pushing metrics to Prometheus on port {args.prometheus}.')
 
-	# Infinite loop
-	while True:
-		try:
-			measurements, elapsed_time = perform_measurements(
-				args.verbose,
-				args.remote_host,
-				args.target_port,
-				args.duration,
-				measure_bandwidth_flag=args.bandwidth,
-				measure_throughput_flag=args.throughput,
-				measure_congestion_flag=args.congestion,
-				measure_packet_loss_flag=args.packet_loss,
-				measure_latency_flag=args.latency,
-				measure_jitter_flag=args.jitter,
-				measure_retransmission_rate_flag=args.retransmission_rate,  # FIXME: Check it
-				measure_interface_stats_flag=args.interface_stats  # FIXME: Works better with congestion flag
-			)
-
-			# In case to retrieve information from origin host
-			# hostname = socket.gethostname()
-			# IPAddr = socket.gethostbyname(hostname)
-			# logging.info("Your Computer Name is:" + hostname)
-			# logging.info("Your Computer IP Address is:" + IPAddr)
-
-			# Extract local IP
-			s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			s.connect(('8.8.8.8', 1))  # connect() for UDP doesn't send packets
-			local_ip_address = s.getsockname()[0]
-
-			data['connection']['local'] = local_ip_address
-			data['connection']['remote'] = args.remote_host
-			data['connection']['port'] = args.target_port
-
-			data['measurements'] = measurements
-
-			data['timestamp'] = datetime.fromtimestamp(datetime.now().timestamp()).strftime("%d-%m-%Y, %H:%M:%S")
-			data['total_time_taken'] = round(elapsed_time, 2)
-
-			# Debug data extracted
-			logging.debug(json.dumps(data, indent=4))
-
-			# Apache Kafka
-			if args.kafka:
-				# producer = data_communication.kafka_connection(args.kafka[0])
-				data_communication.kafka_send(producer, json.dumps(data), args.kafka[1])
-
-				logging.debug(f'Data transmitted to Kafka server.')
-
-			# Rabbit MQ
-			if args.rabbitmq:
-				data_communication.rabbit_connection(args.rabbitmq[0])
-				data_communication.rabbit_send(json.dumps(data), args.rabbit[1])
-
-				logging.debug(f'Data transmitted to RabbitMQ broker.')
-
-			# Rest API
-			if args.api:
-				data_communication.api_send(json.dumps(data), args.api)
-
-				logging.debug(f'Data transmitted to Rest API')
-
-			# Prometheus
-			if args.prometheus:
-			# 	metrics = data_communication.prometheus_connection(args.prometheus)
-				data_communication.prometheus_send(metrics, data)
-
-			# Handle delays
-			if args.live:
-				logging.info(f'Waiting {args.delay} seconds for next measures...')
-				time.sleep(args.delay)
-			else:
-				logging.info(f'Waiting trigger for next measure...')
-				trigger_measure()
-
-		except PermissionError as e:
-			logging.error('Error: Permission denied. Run the script with administrative privileges.')
-		except Exception as e:
-			logging.error(f'Error: {e}')
-			time.sleep(60)
+	# Handle delays
+	if args.live:
+		# Infinite loop
+		while True:
+			run_procedure(kafka_producer, prometheus_metrics)
+			logging.info(f'Waiting {args.delay} seconds for next measures...')
+			time.sleep(args.delay)
+	else:
+		run_procedure(kafka_producer, prometheus_metrics)
+		while True:
+			logging.info(f'Waiting trigger for next measure...')
+			time.sleep(120)
