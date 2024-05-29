@@ -1,15 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: network-performance-probe-service
+  name: network-probe-service
 spec:
   selector:
-    app: network-performance-probe
+    app: network-probe
   ports:
-    - protocol: TCP
+    - name: http-5000
+      protocol: TCP
       port: 5000
       targetPort: 5000
-    - protocol: TCP
+    - name: http-5001
+      protocol: TCP
       port: 5001
       targetPort: 5001
-  type: LoadBalancer
+  type: ClusterIP

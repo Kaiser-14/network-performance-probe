@@ -1,27 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: network-performance-probe-deployment
+  name: network-probe
   labels:
-    app: network-performance-probe
+      app: network-probe
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: network-performance-probe
+      app: network-probe
   template:
     metadata:
-      name: network-performance-probe
       labels:
-        app: network-performance-probe
+        app: network-probe
     spec:
+      nodeName: netma-test-1
       containers:
-        - name: network-performance-probe
+        - name: network-probe
           image: kaiser1414/network-performance-probe:latest
-          imagePullPolicy: IfNotPresent
+#          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
             - containerPort: 5001
-          args: ['verbose', 'live', '--host', '127.0.0.1', '--port', '80', '--throughput', '--latency', '--packet-loss', '--prometheus', '5001']
+          command: ['python', 'network_probe.py']
+          args: ['--verbose', '--host', '127.0.0.1', '--port', '80', '--throughput', '--latency', '--packet-loss', '--prometheus', '5001']
       restartPolicy: Always
       
