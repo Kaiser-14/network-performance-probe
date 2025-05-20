@@ -475,8 +475,8 @@ def run_procedure(_kafka_producer=None, _prometheus_metrics=None):
 
 		# Rabbit MQ
 		if args.rabbitmq:
-			data_communication.rabbit_connection(args.rabbitmq[0])
-			data_communication.rabbit_send(json.dumps(data), args.rabbitmq[1])
+			channel, connection = data_communication.rabbit_connection(args.rabbitmq[0])
+			data_communication.rabbit_send(channel, connection, json.dumps(data), args.rabbitmq[1])
 
 			logging.debug(f'Data transmitted to RabbitMQ broker.')
 
